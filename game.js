@@ -8,6 +8,7 @@ class Game2048 {
         this.scoreElement = document.getElementById('score');
         this.bestScoreElement = document.getElementById('best-score');
         this.gameMessage = document.querySelector('.game-message');
+        this.isAnimating = false;
         
         this.init();
         this.setupEventListeners();
@@ -39,7 +40,9 @@ class Game2048 {
             const cell = emptyCells[randomIndex];
             const value = Math.random() < 0.9 ? 2 : 4;
             this.grid[cell.row][cell.col] = value;
+            return { row: cell.row, col: cell.col, value: value };
         }
+        return null;
     }
 
     getEmptyCells() {
@@ -54,14 +57,16 @@ class Game2048 {
         return cells;
     }
 
-    updateDisplay() {
+    updateDisplay(newTiles = [], mergedTiles = []) {
         this.clearTiles();
         
         for (let row = 0; row < this.size; row++) {
             for (let col = 0; col < this.size; col++) {
                 const value = this.grid[row][col];
                 if (value !== 0) {
-                    this.createTile(value, row, col);
+                    const isNew = newTiles.some(tile => tile.row === row && tile.col === col);
+                    const isMerged = mergedTiles.some(tile => tile.row === row && tile.col === col);
+                    this.createTile(value, row, col, isNew, isMerged);
                 }
             }
         }
@@ -76,11 +81,31 @@ class Game2048 {
 
     createTile(value, row, col, isNew = false, isMerged = false) {
         const tile = document.createElement('div');
-        tile.className = `tile tile-${value} tile-position-${row + 1}-${col + 1}`;
+        tile.className = `tile tile-${value}`;
         tile.textContent = value;
         
+        // Calculate position directly instead of using CSS classes
+        const tileSize = window.innerWidth <= 520 ? 80 : 110;
+        const x = col * tileSize;
+        const y = row * tileSize;
+        
+        // Set initial position directly
+        tile.style.transform = `translate(${x}px, ${y}px)`;
+        
         if (isNew) {
-            tile.classList.add('tile-new');
+            // For new tiles, start with scale 0 and animate to normal size
+            tile.style.transform = `translate(${x}px, ${y}px) scale(0)`;
+            tile.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';
+            tile.style.opacity = '0';
+            
+            // Force a reflow to ensure the initial state is applied
+            tile.offsetHeight;
+            
+            // Then animate to full size
+            setTimeout(() => {
+                tile.style.transform = `translate(${x}px, ${y}px) scale(1)`;
+                tile.style.opacity = '1';
+            }, 10);
         }
         if (isMerged) {
             tile.classList.add('tile-merged');
@@ -90,26 +115,58 @@ class Game2048 {
     }
 
     move(direction) {
+        if (this.isAnimating) return; // Prevent moves during animation
+        
         const previousGrid = this.copyGrid(this.grid);
-        let moved = false;
+        const moveResults = this.calculateMoves(direction);
+        
+        if (moveResults.length === 0) return; // No moves possible
+        
+        this.isAnimating = true;
+        this.animateMoves(moveResults, direction);
+    }
+
+    calculateMoves(direction) {
+        const moves = [];
+        const newGrid = this.copyGrid(this.grid);
         let scoreGained = 0;
 
+        // Create a map of current tile positions
+        const currentTiles = new Map();
+        for (let row = 0; row < this.size; row++) {
+            for (let col = 0; col < this.size; col++) {
+                if (this.grid[row][col] !== 0) {
+                    currentTiles.set(`${row}-${col}`, {
+                        value: this.grid[row][col],
+                        row: row,
+                        col: col
+                    });
+                }
+            }
+        }
+
+        // Calculate new positions
         switch (direction) {
             case 'left':
                 for (let row = 0; row < this.size; row++) {
-                    const result = this.slideArray(this.grid[row]);
-                    this.grid[row] = result.array;
+                    const result = this.slideArrayWithTracking(this.grid[row], row, direction);
+                    newGrid[row] = result.array;
+                    moves.push(...result.moves);
                     scoreGained += result.score;
-                    if (result.moved) moved = true;
                 }
                 break;
             case 'right':
                 for (let row = 0; row < this.size; row++) {
                     const reversed = this.grid[row].slice().reverse();
-                    const result = this.slideArray(reversed);
-                    this.grid[row] = result.array.reverse();
+                    const result = this.slideArrayWithTracking(reversed, row, direction);
+                    newGrid[row] = result.array.reverse();
+                    // Adjust moves for right direction
+                    result.moves.forEach(move => {
+                        move.toCol = this.size - 1 - move.toCol;
+                        move.fromCol = this.size - 1 - move.fromCol;
+                    });
+                    moves.push(...result.moves);
                     scoreGained += result.score;
-                    if (result.moved) moved = true;
                 }
                 break;
             case 'up':
@@ -118,12 +175,12 @@ class Game2048 {
                     for (let row = 0; row < this.size; row++) {
                         column.push(this.grid[row][col]);
                     }
-                    const result = this.slideArray(column);
+                    const result = this.slideArrayWithTracking(column, col, direction);
                     for (let row = 0; row < this.size; row++) {
-                        this.grid[row][col] = result.array[row];
+                        newGrid[row][col] = result.array[row];
                     }
+                    moves.push(...result.moves);
                     scoreGained += result.score;
-                    if (result.moved) moved = true;
                 }
                 break;
             case 'down':
@@ -132,28 +189,182 @@ class Game2048 {
                     for (let row = this.size - 1; row >= 0; row--) {
                         column.push(this.grid[row][col]);
                     }
-                    const result = this.slideArray(column);
+                    const result = this.slideArrayWithTracking(column, col, direction);
                     for (let row = 0; row < this.size; row++) {
-                        this.grid[this.size - 1 - row][col] = result.array[row];
+                        newGrid[this.size - 1 - row][col] = result.array[row];
                     }
+                    // Adjust moves for down direction
+                    result.moves.forEach(move => {
+                        move.toRow = this.size - 1 - move.toRow;
+                        move.fromRow = this.size - 1 - move.fromRow;
+                    });
+                    moves.push(...result.moves);
                     scoreGained += result.score;
-                    if (result.moved) moved = true;
                 }
                 break;
         }
 
-        if (moved) {
-            this.score += scoreGained;
+        this.pendingGrid = newGrid;
+        this.pendingScore = scoreGained;
+        return moves;
+    }
+
+    slideArrayWithTracking(array, fixedIndex, direction) {
+        const moves = [];
+        let score = 0;
+        const newArray = [...array];
+        
+        // First pass: move non-zero elements
+        const nonZeros = [];
+        for (let i = 0; i < array.length; i++) {
+            if (array[i] !== 0) {
+                nonZeros.push({value: array[i], originalIndex: i});
+            }
+        }
+        
+        // Create moves for sliding
+        for (let i = 0; i < nonZeros.length; i++) {
+            const tile = nonZeros[i];
+            if (tile.originalIndex !== i) {
+                const move = {
+                    value: tile.value,
+                    distance: Math.abs(tile.originalIndex - i)
+                };
+                
+                if (direction === 'left' || direction === 'right') {
+                    move.fromRow = fixedIndex;
+                    move.fromCol = tile.originalIndex;
+                    move.toRow = fixedIndex;
+                    move.toCol = i;
+                } else {
+                    move.fromRow = tile.originalIndex;
+                    move.fromCol = fixedIndex;
+                    move.toRow = i;
+                    move.toCol = fixedIndex;
+                }
+                
+                moves.push(move);
+            }
+            newArray[i] = tile.value;
+        }
+        
+        // Fill the rest with zeros
+        for (let i = nonZeros.length; i < this.size; i++) {
+            newArray[i] = 0;
+        }
+        
+        // Second pass: handle merges
+        for (let i = 0; i < this.size - 1; i++) {
+            if (newArray[i] !== 0 && newArray[i] === newArray[i + 1]) {
+                newArray[i] *= 2;
+                newArray[i + 1] = 0;
+                score += newArray[i];
+                
+                // Create merge move
+                const mergeMove = {
+                    value: newArray[i],
+                    merged: true,
+                    distance: 1
+                };
+                
+                if (direction === 'left' || direction === 'right') {
+                    mergeMove.fromRow = fixedIndex;
+                    mergeMove.fromCol = i + 1;
+                    mergeMove.toRow = fixedIndex;
+                    mergeMove.toCol = i;
+                } else {
+                    mergeMove.fromRow = i + 1;
+                    mergeMove.fromCol = fixedIndex;
+                    mergeMove.toRow = i;
+                    mergeMove.toCol = fixedIndex;
+                }
+                
+                moves.push(mergeMove);
+            }
+        }
+        
+        // Third pass: slide again after merging
+        const finalFiltered = newArray.filter(val => val !== 0);
+        const finalMissing = this.size - finalFiltered.length;
+        const finalZeros = Array(finalMissing).fill(0);
+        const finalArray = finalFiltered.concat(finalZeros);
+        
+        return { array: finalArray, moves: moves, score: score };
+    }
+
+    animateMoves(moves, direction) {
+        if (moves.length === 0) {
+            this.isAnimating = false;
+            return;
+        }
+
+        // Calculate animation duration based on distance
+        const baseSpeed = 120; // milliseconds per grid unit
+        const maxDuration = Math.max(...moves.map(move => move.distance * baseSpeed));
+        
+        // Apply animations to existing tiles
+        moves.forEach(move => {
+            const tileElement = this.findTileElement(move.fromRow, move.fromCol, move.value);
+            if (tileElement) {
+                const duration = move.distance * baseSpeed;
+                const tileSize = window.innerWidth <= 520 ? 80 : 110; // Responsive tile spacing
+                tileElement.style.transition = `transform ${duration}ms ease-out`;
+                tileElement.style.transform = `translate(${move.toCol * tileSize}px, ${move.toRow * tileSize}px)`;
+                
+                if (move.merged) {
+                    setTimeout(() => {
+                        tileElement.classList.add('tile-merged');
+                    }, duration);
+                }
+            }
+        });
+
+        // Update grid and display after animation
+        setTimeout(() => {
+            this.grid = this.pendingGrid;
+            this.score += this.pendingScore;
             this.updateBestScore();
-            this.addRandomTile();
-            this.updateDisplay();
+            
+            const newTile = this.addRandomTile();
+            const newTiles = newTile ? [newTile] : [];
+            this.updateDisplay(newTiles, []);
+            
+            this.isAnimating = false;
             
             if (this.checkWin()) {
                 this.showMessage('You Win!', 'game-won');
             } else if (this.checkGameOver()) {
                 this.showMessage('Game Over!', 'game-over');
             }
+        }, maxDuration + 50);
+    }
+
+    findTileElement(row, col, value) {
+        const tiles = document.querySelectorAll('.tile');
+        const tileSize = window.innerWidth <= 520 ? 80 : 110;
+        const expectedX = col * tileSize;
+        const expectedY = row * tileSize;
+        
+        for (let tile of tiles) {
+            const classes = tile.className.split(' ');
+            const valueClass = `tile-${value}`;
+            
+            if (classes.includes(valueClass)) {
+                // Extract current position from transform
+                const transform = tile.style.transform;
+                const matches = transform.match(/translate\((\d+)px,\s*(\d+)px\)/);
+                
+                if (matches) {
+                    const currentX = parseInt(matches[1]);
+                    const currentY = parseInt(matches[2]);
+                    
+                    if (currentX === expectedX && currentY === expectedY) {
+                        return tile;
+                    }
+                }
+            }
         }
+        return null;
     }
 
     slideArray(array) {
@@ -253,6 +464,7 @@ class Game2048 {
 
     restart() {
         this.score = 0;
+        this.isAnimating = false;
         this.hideMessage();
         this.init();
     }
