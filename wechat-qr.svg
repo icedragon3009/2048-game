@@ -1,0 +1,9 @@
+<svg width="260" height="260" xmlns="http://www.w3.org/2000/svg">
+  <rect width="260" height="260" fill="#f0f0f0" stroke="#ccc" stroke-width="1"/>
+  <text x="130" y="130" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#666">
+    请将微信二维码图片
+  </text>
+  <text x="130" y="150" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#666">
+    保存为 wechat-qr.png
+  </text>
+</svg>
