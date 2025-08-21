@@ -348,28 +348,34 @@ footer {
 /* Position classes are no longer needed - positions are set directly via JavaScript */
 
 /* Easter Egg Balloon Styles */
-.easter-egg-balloon {
+
+/* 彩蛋二维码浮层样式（第一层） */
+.easter-egg-qr-overlay {
     position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 9999;
-    animation: balloonAppear 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    pointer-events: none; /* 允许点击穿透到下层 */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9998;
+    animation: fadeIn 0.3s ease-out;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 
-.balloon-content {
+.easter-egg-qr-content {
     position: relative;
-    background: #ffffff;
-    color: #333;
-    padding: 20px;
+    background: white;
     border-radius: 15px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-    transform-origin: bottom center;
-    animation: balloonFloat 3s ease-in-out infinite;
-    pointer-events: auto; /* 气球本身可以点击 */
-    min-width: 320px;
-    text-align: center;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .qr-code-container {
@@ -378,119 +384,393 @@ footer {
     align-items: center;
 }
 
-.qr-code-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 15px;
-    gap: 10px;
-}
-
-.avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 6px;
-    object-fit: cover;
-}
-
-.user-info {
-    text-align: left;
-}
-
-.username {
-    font-size: 16px;
-    font-weight: bold;
-    color: #333;
-    margin-bottom: 2px;
-}
-
-.location {
-    font-size: 12px;
-    color: #888;
-}
-
 .qr-code-image {
+    position: relative;
     margin: 15px 0;
     border: 1px solid #e0e0e0;
     border-radius: 8px;
     padding: 10px;
     background: white;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.qr-code-image:hover {
+    transform: scale(1.05);
 }
 
 .qr-code-img {
-    width: 260px;
-    height: 260px;
+    width: 200px;
+    height: 200px;
     display: block;
     margin: 0 auto;
 }
 
-.qr-code-footer {
-    font-size: 12px;
-    color: #888;
-    margin-top: 10px;
-    line-height: 1.4;
+/* 点击引导动画样式 */
+.click-guide {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 10;
 }
 
-.balloon-tail {
+.click-indicator {
+    width: 20px;
+    height: 20px;
+    border: 3px solid #ff6b6b;
+    border-radius: 50%;
+    background: rgba(255, 107, 107, 0.2);
+    animation: clickPulse 2s infinite;
+    position: relative;
+}
+
+.click-indicator::before {
+    content: '👆';
     position: absolute;
-    bottom: -15px;
+    top: -40px;
     left: 50%;
     transform: translateX(-50%);
-    width: 0;
-    height: 0;
-    border-left: 15px solid transparent;
-    border-right: 15px solid transparent;
-    border-top: 20px solid #ffffff;
+    font-size: 20px;
+    animation: clickBounce 2s infinite;
 }
 
-.balloon-tail::after {
+.click-ripple {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border: 2px solid #ff6b6b;
+    border-radius: 50%;
+    animation: clickRipple 2s infinite;
+}
+
+@keyframes clickPulse {
+    0%, 100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.2);
+        opacity: 0.7;
+    }
+}
+
+@keyframes clickBounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateX(-50%) translateY(0);
+    }
+    40% {
+        transform: translateX(-50%) translateY(-10px);
+    }
+    60% {
+        transform: translateX(-50%) translateY(-5px);
+    }
+}
+
+@keyframes clickRipple {
+    0% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(3);
+        opacity: 0;
+    }
+}
+
+/* 彩蛋搭车浮层样式（第二层） */
+.easter-egg-dache-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    animation: fadeIn 0.3s ease-out;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.easter-egg-dache-content {
+    position: relative;
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    width: 55vw;
+    height: 65vh;
+    max-height: 600px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    overflow-y: auto;
+}
+
+.dache-image {
+    max-width: 100%;
+    max-height: 250px;
+    height: auto;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    object-fit: contain;
+    margin-bottom: 10px;
+}
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    width: 30px;
+    height: 30px;
+    background: #ff4757;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 20px;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+.close-btn:hover {
+    background: #ff3742;
+    transform: scale(1.1);
+}
+
+.fade-out {
+    animation: fadeOut 0.3s ease-in forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+}
+
+/* 选择按钮样式 */
+.choice-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.choice-btn {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 25px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+.choice-btn::before {
     content: '';
     position: absolute;
-    bottom: 20px;
+    top: 50%;
     left: 50%;
-    transform: translateX(-50%);
-    width: 2px;
-    height: 40px;
-    background: #333;
-    border-radius: 1px;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.3s ease;
 }
 
-/* 气球出现动画 */
-@keyframes balloonAppear {
-    0% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0) rotate(-10deg);
-    }
-    50% {
-        transform: translate(-50%, -50%) scale(1.1) rotate(5deg);
-    }
-    100% {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1) rotate(0deg);
-    }
+.choice-btn:hover::before {
+    width: 100px;
+    height: 100px;
 }
 
-/* 气球浮动动画 */
-@keyframes balloonFloat {
+.no-btn {
+    background: linear-gradient(135deg, #ff6b6b, #ff5252);
+    color: white;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+}
+
+.no-btn:hover {
+    background: linear-gradient(135deg, #ff5252, #f44336);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.6);
+}
+
+.yes-btn {
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    color: white;
+    box-shadow: 0 6px 20px rgba(255, 107, 53, 0.5);
+    font-size: 20px;
+    padding: 15px 40px;
+    position: relative;
+    animation: pulse 2s infinite;
+}
+
+.yes-btn:hover {
+    background: linear-gradient(135deg, #f7931e, #ff6b35);
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 8px 25px rgba(255, 107, 53, 0.7);
+}
+
+@keyframes pulse {
     0%, 100% {
-        transform: translateY(0px) rotate(-2deg);
+        box-shadow: 0 6px 20px rgba(255, 107, 53, 0.5);
     }
     50% {
-        transform: translateY(-10px) rotate(2deg);
+        box-shadow: 0 8px 25px rgba(255, 107, 53, 0.8);
     }
 }
 
-/* 气球消失动画 */
-.balloon-hide {
-    animation: balloonHide 0.3s ease-in forwards;
+.choice-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
-@keyframes balloonHide {
-    0% {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
-    }
-    100% {
+/* 价格信息样式 */
+.price-info {
+    margin-top: 15px;
+    text-align: center;
+    animation: slideIn 0.4s ease-out;
+    width: 100%;
+    flex: 1;
+}
+
+.price-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #4ecdc4;
+    display: inline-block;
+}
+
+.price-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.price-item {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    padding: 8px 16px;
+    border-radius: 12px;
+    border-left: 3px solid #4ecdc4;
+    font-size: 14px;
+    font-weight: 600;
+    color: #495057;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.price-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.price-item:first-child {
+    background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+    border-left-color: #f39c12;
+    color: #856404;
+}
+
+@keyframes slideIn {
+    from {
         opacity: 0;
-        transform: translate(-50%, -70%) scale(0.8);
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+    .easter-egg-qr-content {
+        padding: 15px;
+    }
+    
+    .qr-code-img {
+        width: 160px;
+        height: 160px;
+    }
+    
+    .easter-egg-dache-content {
+        width: 80vw;
+        height: 60vh;
+        padding: 15px;
+    }
+    
+    .close-btn {
+        width: 35px;
+        height: 35px;
+        font-size: 22px;
+    }
+    
+    .choice-btn {
+        padding: 10px 25px;
+        font-size: 16px;
+    }
+    
+    .yes-btn {
+        font-size: 18px;
+        padding: 12px 35px;
+    }
+    
+    .choice-buttons {
+        gap: 15px;
+        margin-top: 15px;
+    }
+    
+    .price-title {
+        font-size: 18px;
+    }
+    
+    .price-item {
+        font-size: 14px;
+        padding: 8px 15px;
     }
 }

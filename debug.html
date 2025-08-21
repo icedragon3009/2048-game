@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片加载测试</title>
+    <style>
+        body { padding: 20px; font-family: Arial, sans-serif; }
+        img { border: 1px solid #ccc; margin: 10px; }
+        .test { margin: 20px 0; padding: 10px; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <h1>图片加载测试</h1>
+    
+    <div class="test">
+        <h3>测试1: 直接路径 static/dache.png</h3>
+        <img src="static/dache.png" alt="搭车场景" width="200" onerror="this.style.border='2px solid red'; this.nextElementSibling.style.display='block';">
+        <div style="display: none; color: red;">❌ 图片加载失败</div>
+    </div>
+    
+    <div class="test">
+        <h3>测试2: 相对路径 ./static/dache.png</h3>
+        <img src="./static/dache.png" alt="搭车场景" width="200" onerror="this.style.border='2px solid red'; this.nextElementSibling.style.display='block';">
+        <div style="display: none; color: red;">❌ 图片加载失败</div>
+    </div>
+    
+    <div class="test">
+        <h3>测试3: 二维码图片 static/wechat-qr.png</h3>
+        <img src="static/wechat-qr.png" alt="二维码" width="200" onerror="this.style.border='2px solid red'; this.nextElementSibling.style.display='block';">
+        <div style="display: none; color: red;">❌ 图片加载失败</div>
+    </div>
+    
+    <div class="test">
+        <h3>文件信息</h3>
+        <p>当前页面URL: <span id="currentUrl"></span></p>
+        <p>测试时间: <span id="testTime"></span></p>
+    </div>
+    
+    <script>
+        document.getElementById('currentUrl').textContent = window.location.href;
+        document.getElementById('testTime').textContent = new Date().toLocaleString();
+        
+        // 测试fetch API
+        fetch('static/dache.png')
+            .then(response => {
+                if (response.ok) {
+                    console.log('✅ dache.png fetch成功', response.status);
+                } else {
+                    console.error('❌ dache.png fetch失败', response.status);
+                }
+            })
+            .catch(error => {
+                console.error('❌ dache.png fetch错误', error);
+            });
+    </script>
+</body>
+</html>
