@@ -1,6 +1,7 @@
 # 2048 Game
 
 一个使用HTML、CSS和JavaScript开发的经典2048益智游戏的网页版本。
+试玩地址：https://icedragon3009.github.io/2048-game/
 
 ## 🎮 游戏介绍
 
