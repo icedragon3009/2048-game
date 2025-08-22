@@ -60,6 +60,18 @@ class Game2048 {
 }
 
 // 初始化游戏
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // 开始预加载图片
+    const imageUrls = ImagePreloader.getGameImageUrls();
+    const preloadPromise = window.imagePreloader.preloadImages(imageUrls);
+    
+    // 初始化游戏（不等待图片加载完成）
     new Game2048();
+    
+    // 在后台继续预加载图片
+    preloadPromise.then(() => {
+        console.log('🎉 所有游戏图片预加载完成，用户体验将更流畅');
+    }).catch((error) => {
+        console.warn('⚠️ 图片预加载遇到问题，但不影响游戏运行:', error);
+    });
 });

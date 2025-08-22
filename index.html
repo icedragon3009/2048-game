@@ -73,10 +73,26 @@
     </div>
 
     <!-- 游戏模块 -->
+    <script src="js/ImagePreloader.js"></script>
     <script src="js/GameCore.js"></script>
     <script src="js/GameUI.js"></script>
     <script src="js/EasterEgg.js"></script>
     <script src="js/InputHandler.js"></script>
     <script src="js/Game2048.js"></script>
+    
+    <!-- Service Worker 注册 -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then((registration) => {
+                        console.log('✅ Service Worker 注册成功:', registration.scope);
+                    })
+                    .catch((error) => {
+                        console.error('❌ Service Worker 注册失败:', error);
+                    });
+            });
+        }
+    </script>
 </body>
 </html>

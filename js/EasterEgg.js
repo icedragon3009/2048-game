@@ -19,7 +19,7 @@ class EasterEgg {
             <div class="easter-egg-qr-content">
                 <div class="qr-code-container">
                     <div class="qr-code-image">
-                        <img src="static/wechat-qr.png" alt="WeChat QR Code" class="qr-code-img">
+                        <img src="static/wechat-qr.png" alt="WeChat QR Code" class="qr-code-img" loading="eager">
                         <!-- 点击引导动画 -->
                         <div class="click-guide">
                             <div class="click-indicator"></div>
@@ -88,11 +88,63 @@ class EasterEgg {
         // 创建搭车浮层（第二层，覆盖在二维码上方）
         this.dacheOverlay = document.createElement('div');
         this.dacheOverlay.className = 'easter-egg-dache-overlay';
-        this.dacheOverlay.innerHTML = `
-            <div class="easter-egg-dache-content">
-                <img src="static/dache.png?v=${Date.now()}" alt="搭车场景" class="dache-image" onerror="console.error('Failed to load dache.png'); this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <div class="image-placeholder" style="display: none; width: 200px; height: 150px; border: 2px dashed #ccc; align-items: center; justify-content: center; color: #666; font-size: 14px; text-align: center;">搭车图片加载失败<br>路径: static/dache.png</div>
-                
+        
+        // 创建内容容器
+        const content = document.createElement('div');
+        content.className = 'easter-egg-dache-content';
+        
+        // 创建图片容器
+        const imageContainer = document.createElement('div');
+        imageContainer.className = 'image-container';
+        
+        // 使用预加载器创建图片，提供更好的加载体验
+        const imageUrl = `static/dache.png?v=${Date.now()}`;
+        
+        if (window.imagePreloader && window.imagePreloader.isImageLoaded('static/dache.png')) {
+            // 图片已预加载，直接显示
+            const img = document.createElement('img');
+            img.src = imageUrl;
+            img.alt = '搭车场景';
+            img.className = 'dache-image';
+            imageContainer.appendChild(img);
+        } else {
+            // 图片未预加载，显示加载动画
+            const loadingSpinner = document.createElement('div');
+            loadingSpinner.className = 'loading-spinner';
+            loadingSpinner.innerHTML = `
+                <div class="spinner"></div>
+                <div class="loading-text">加载中...</div>
+            `;
+            imageContainer.appendChild(loadingSpinner);
+            
+            const img = document.createElement('img');
+            img.src = imageUrl;
+            img.alt = '搭车场景';
+            img.className = 'dache-image';
+            img.style.display = 'none';
+            
+            img.onload = () => {
+                img.style.display = 'block';
+                loadingSpinner.style.display = 'none';
+                img.style.animation = 'imageFadeIn 0.5s ease-in-out';
+            };
+            
+            img.onerror = () => {
+                loadingSpinner.style.display = 'none';
+                const placeholder = document.createElement('div');
+                placeholder.className = 'image-placeholder';
+                placeholder.style.cssText = 'width: 200px; height: 150px; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; color: #666; font-size: 14px; text-align: center;';
+                placeholder.innerHTML = '搭车图片加载失败<br>路径: static/dache.png';
+                imageContainer.appendChild(placeholder);
+            };
+            
+            imageContainer.appendChild(img);
+        }
+        
+        content.appendChild(imageContainer);
+        
+        // 添加其余HTML内容
+        content.innerHTML += `
                 <!-- 选择按钮区域 -->
                 <div class="choice-buttons">
                     <button class="choice-btn yes-btn">🚀 搭车</button>
@@ -111,9 +163,9 @@ class EasterEgg {
                 </div>
                 
                 <div class="close-btn">×</div>
-            </div>
         `;
         
+        this.dacheOverlay.appendChild(content);
         document.body.appendChild(this.dacheOverlay);
         
         // 搭车浮层的关闭事件

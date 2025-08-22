@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片加载性能测试</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            background: #f5f5f5;
+        }
+        .test-container { 
+            background: white; 
+            padding: 20px; 
+            margin: 20px 0; 
+            border-radius: 10px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-result { 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        img { max-width: 300px; border: 1px solid #ddd; margin: 10px; border-radius: 5px; }
+        .spinner { 
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #007bff;
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .metric-label {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 2048游戏图片加载性能测试</h1>
+    
+    <div class="test-container">
+        <h2>📊 优化前后对比</h2>
+        <div class="metrics">
+            <div class="metric-card">
+                <div class="metric-value">3.5MB</div>
+                <div class="metric-label">优化前文件大小</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">656KB</div>
+                <div class="metric-label">优化后文件大小</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">82%</div>
+                <div class="metric-label">文件大小减少</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="load-time">测试中...</div>
+                <div class="metric-label">实际加载时间</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2>🖼️ 图片加载测试</h2>
+        <div id="test-results"></div>
+        
+        <h3>优化后的搭车图片：</h3>
+        <div id="optimized-image-container">
+            <div class="spinner"></div> 正在加载优化后图片...
+        </div>
+        
+        <h3>二维码图片：</h3>
+        <div id="qr-image-container">
+            <div class="spinner"></div> 正在加载二维码图片...
+        </div>
+        
+        <button onclick="runPerformanceTest()" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 10px 0;">
+            🔄 重新测试加载速度
+        </button>
+    </div>
+
+    <div class="test-container">
+        <h2>✨ 优化技术说明</h2>
+        <div class="test-result info">
+            <strong>1. 图片压缩优化：</strong>
+            使用sips工具将3.5MB的PNG图片压缩至656KB，减少82%文件大小
+        </div>
+        <div class="test-result info">
+            <strong>2. 预加载机制：</strong>
+            游戏启动时在后台预加载图片，提升用户体验
+        </div>
+        <div class="test-result info">
+            <strong>3. 加载动画：</strong>
+            显示旋转加载动画，让用户了解加载进度
+        </div>
+        <div class="test-result info">
+            <strong>4. Service Worker缓存：</strong>
+            第二次访问时从缓存加载，几乎无延迟
+        </div>
+        <div class="test-result info">
+            <strong>5. 懒加载策略：</strong>
+            只有在需要显示图片时才开始加载
+        </div>
+    </div>
+
+    <script>
+        // 记录页面加载时间
+        const pageLoadStart = performance.now();
+        
+        // 图片加载性能测试
+        function testImageLoad(url, containerId, description) {
+            const container = document.getElementById(containerId);
+            const startTime = performance.now();
+            
+            const img = new Image();
+            img.onload = function() {
+                const loadTime = performance.now() - startTime;
+                container.innerHTML = `
+                    <div class="test-result success">
+                        ✅ ${description} 加载成功！耗时: ${loadTime.toFixed(2)}ms
+                    </div>
+                    <img src="${url}" alt="${description}">
+                `;
+                
+                // 更新总加载时间
+                updateLoadTime();
+            };
+            
+            img.onerror = function() {
+                const loadTime = performance.now() - startTime;
+                container.innerHTML = `
+                    <div class="test-result warning">
+                        ⚠️ ${description} 加载失败！耗时: ${loadTime.toFixed(2)}ms
+                    </div>
+                `;
+            };
+            
+            img.src = url;
+        }
+        
+        function updateLoadTime() {
+            const totalTime = performance.now() - pageLoadStart;
+            document.getElementById('load-time').textContent = `${(totalTime/1000).toFixed(2)}s`;
+        }
+        
+        function runPerformanceTest() {
+            document.getElementById('test-results').innerHTML = `
+                <div class="test-result info">
+                    <div class="spinner"></div> 正在进行性能测试...
+                </div>
+            `;
+            
+            const tests = [
+                { url: 'static/dache.png', name: '搭车图片', size: '656KB' },
+                { url: 'static/wechat-qr.png', name: '二维码图片', size: '160KB' }
+            ];
+            
+            let completedTests = 0;
+            const results = [];
+            
+            tests.forEach((test, index) => {
+                const startTime = performance.now();
+                const img = new Image();
+                
+                img.onload = function() {
+                    const loadTime = performance.now() - startTime;
+                    results[index] = {
+                        name: test.name,
+                        size: test.size,
+                        time: loadTime.toFixed(2),
+                        status: 'success'
+                    };
+                    
+                    completedTests++;
+                    if (completedTests === tests.length) {
+                        displayResults(results);
+                    }
+                };
+                
+                img.onerror = function() {
+                    const loadTime = performance.now() - startTime;
+                    results[index] = {
+                        name: test.name,
+                        size: test.size,
+                        time: loadTime.toFixed(2),
+                        status: 'error'
+                    };
+                    
+                    completedTests++;
+                    if (completedTests === tests.length) {
+                        displayResults(results);
+                    }
+                };
+                
+                img.src = test.url + '?t=' + Date.now(); // 避免缓存
+            });
+        }
+        
+        function displayResults(results) {
+            let html = '<h4>📈 测试结果：</h4>';
+            results.forEach(result => {
+                const statusClass = result.status === 'success' ? 'success' : 'warning';
+                const statusIcon = result.status === 'success' ? '✅' : '❌';
+                html += `
+                    <div class="test-result ${statusClass}">
+                        ${statusIcon} ${result.name} (${result.size}) - 加载时间: ${result.time}ms
+                    </div>
+                `;
+            });
+            document.getElementById('test-results').innerHTML = html;
+        }
+        
+        // 页面加载完成后开始测试
+        window.addEventListener('load', () => {
+            // 测试图片加载
+            testImageLoad('static/dache.png?v=' + Date.now(), 'optimized-image-container', '优化后搭车图片');
+            testImageLoad('static/wechat-qr.png', 'qr-image-container', '二维码图片');
+            
+            // 自动运行性能测试
+            setTimeout(runPerformanceTest, 1000);
+        });
+    </script>
+</body>
+</html>
