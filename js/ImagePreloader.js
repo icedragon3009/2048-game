@@ -132,14 +132,47 @@ class ImagePreloader {
     }
 
     /**
+     * 检测是否为移动设备
+     * @returns {boolean} 是否为移动设备
+     */
+    static isMobileDevice() {
+        return window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+
+    /**
+     * 获取适合当前设备的图片URL
+     * @param {string} baseName - 基础图片名称（不含扩展名）
+     * @returns {string} 图片URL
+     */
+    static getResponsiveImageUrl(baseName) {
+        const isMobile = this.isMobileDevice();
+        const extension = '.png';
+        
+        if (isMobile) {
+            return `static/${baseName}-mobile${extension}`;
+        } else {
+            return `static/${baseName}${extension}`;
+        }
+    }
+
+    /**
      * 获取游戏需要的所有图片URL
      * @returns {Array} 图片URL列表
      */
     static getGameImageUrls() {
-        return [
-            'static/wechat-qr.png',
-            'static/dache.png'
-        ];
+        const isMobile = this.isMobileDevice();
+        
+        if (isMobile) {
+            return [
+                'static/wechat-qr-mobile.png',
+                'static/dache-mobile.png'
+            ];
+        } else {
+            return [
+                'static/wechat-qr.png',
+                'static/dache.png'
+            ];
+        }
     }
 }
 

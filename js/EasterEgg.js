@@ -7,6 +7,8 @@ class EasterEgg {
         this.isShown = false;
         this.qrOverlay = null;
         this.dacheOverlay = null;
+        this.isProtected = false; // 保护状态，防止误点关闭
+        this.protectionTimeout = null; // 保护倒计时
     }
 
     show() {
@@ -19,7 +21,7 @@ class EasterEgg {
             <div class="easter-egg-qr-content">
                 <div class="qr-code-container">
                     <div class="qr-code-image">
-                        <img src="static/wechat-qr.png" alt="WeChat QR Code" class="qr-code-img" loading="eager">
+                        <img src="${ImagePreloader.getResponsiveImageUrl('wechat-qr')}" alt="WeChat QR Code" class="qr-code-img" loading="eager">
                         <!-- 点击引导动画 -->
                         <div class="click-guide">
                             <div class="click-indicator"></div>
@@ -31,6 +33,9 @@ class EasterEgg {
         `;
         
         document.body.appendChild(this.qrOverlay);
+        
+        // 启动2秒保护机制
+        this.startProtection();
         
         // 二维码图片点击事件
         const qrImage = this.qrOverlay.querySelector('.qr-code-image');
@@ -67,19 +72,8 @@ class EasterEgg {
             }
         });
         
-        // 点击二维码弹窗外区域关闭整个彩蛋
-        this.qrOverlay.addEventListener('click', (e) => {
-            if (!this.qrOverlay.querySelector('.easter-egg-qr-content').contains(e.target)) {
-                this.closeAll();
-            }
-        });
-        
-        this.qrOverlay.addEventListener('touchend', (e) => {
-            if (!this.qrOverlay.querySelector('.easter-egg-qr-content').contains(e.target)) {
-                e.preventDefault();
-                this.closeAll();
-            }
-        });
+        // 点击二维码弹窗外区域关闭整个彩蛋（保护机制延迟添加）
+        this.setupQrOutsideClickHandlers();
         
         this.isShown = true;
     }
@@ -98,9 +92,10 @@ class EasterEgg {
         imageContainer.className = 'image-container';
         
         // 使用预加载器创建图片，提供更好的加载体验
-        const imageUrl = `static/dache.png?v=${Date.now()}`;
+        const baseImageUrl = ImagePreloader.getResponsiveImageUrl('dache');
+        const imageUrl = `${baseImageUrl}?v=${Date.now()}`;
         
-        if (window.imagePreloader && window.imagePreloader.isImageLoaded('static/dache.png')) {
+        if (window.imagePreloader && window.imagePreloader.isImageLoaded(baseImageUrl)) {
             // 图片已预加载，直接显示
             const img = document.createElement('img');
             img.src = imageUrl;
@@ -134,7 +129,7 @@ class EasterEgg {
                 const placeholder = document.createElement('div');
                 placeholder.className = 'image-placeholder';
                 placeholder.style.cssText = 'width: 200px; height: 150px; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; color: #666; font-size: 14px; text-align: center;';
-                placeholder.innerHTML = '搭车图片加载失败<br>路径: static/dache.png';
+                placeholder.innerHTML = `搭车图片加载失败<br>路径: ${baseImageUrl}`;
                 imageContainer.appendChild(placeholder);
             };
             
@@ -236,6 +231,9 @@ class EasterEgg {
     }
 
     closeAll() {
+        // 重置保护状态
+        this.resetProtection();
+        
         // 关闭所有弹窗
         if (this.dacheOverlay) {
             this.dacheOverlay.classList.add('fade-out');
@@ -262,9 +260,97 @@ class EasterEgg {
 
     reset() {
         this.isShown = false;
+        this.resetProtection();
     }
 
     getStatus() {
         return this.isShown;
+    }
+
+    /**
+     * 启动2秒保护机制，防止彩蛋刚出现就被误点关闭
+     */
+    startProtection() {
+        this.isProtected = true;
+        console.log('🛡️ 彩蛋保护机制启动，2秒内不会被误点关闭');
+        
+        // 添加保护状态的视觉提示
+        if (this.qrOverlay) {
+            this.qrOverlay.classList.add('easter-egg-protected');
+        }
+        
+        // 清除之前的保护倒计时（如果存在）
+        if (this.protectionTimeout) {
+            clearTimeout(this.protectionTimeout);
+        }
+        
+        // 2秒后解除保护
+        this.protectionTimeout = setTimeout(() => {
+            this.isProtected = false;
+            console.log('✅ 彩蛋保护机制解除，现在可以点击外部区域关闭');
+            
+            // 移除保护状态的视觉提示
+            if (this.qrOverlay) {
+                this.qrOverlay.classList.remove('easter-egg-protected');
+            }
+            
+            this.protectionTimeout = null;
+        }, 2000);
+    }
+
+    /**
+     * 设置二维码弹窗外部点击处理器（延迟添加）
+     */
+    setupQrOutsideClickHandlers() {
+        // 立即添加事件监听器，但在处理函数中检查保护状态
+        const handleOutsideClick = (e) => {
+            // 如果还在保护期内，忽略点击
+            if (this.isProtected) {
+                console.log('🛡️ 彩蛋正在保护期内，忽略外部点击');
+                return;
+            }
+            
+            // 检查点击是否在内容区域外
+            if (!this.qrOverlay.querySelector('.easter-egg-qr-content').contains(e.target)) {
+                this.closeAll();
+            }
+        };
+
+        const handleOutsideTouch = (e) => {
+            // 如果还在保护期内，忽略触摸
+            if (this.isProtected) {
+                console.log('🛡️ 彩蛋正在保护期内，忽略外部触摸');
+                e.preventDefault();
+                return;
+            }
+            
+            // 检查触摸是否在内容区域外
+            if (!this.qrOverlay.querySelector('.easter-egg-qr-content').contains(e.target)) {
+                e.preventDefault();
+                this.closeAll();
+            }
+        };
+        
+        // 添加事件监听器
+        this.qrOverlay.addEventListener('click', handleOutsideClick);
+        this.qrOverlay.addEventListener('touchend', handleOutsideTouch);
+    }
+
+    /**
+     * 重置保护状态（在关闭彩蛋时调用）
+     */
+    resetProtection() {
+        this.isProtected = false;
+        
+        // 清除保护倒计时
+        if (this.protectionTimeout) {
+            clearTimeout(this.protectionTimeout);
+            this.protectionTimeout = null;
+        }
+        
+        // 移除保护状态的视觉提示
+        if (this.qrOverlay) {
+            this.qrOverlay.classList.remove('easter-egg-protected');
+        }
     }
 }

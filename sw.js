@@ -3,7 +3,7 @@
  * 提供图片和资源缓存，提升加载速度
  */
 
-const CACHE_NAME = '2048-game-v1.2';
+const CACHE_NAME = '2048-game-v1.3-mobile';
 const CACHE_ASSETS = [
     './',
     './index.html',
@@ -15,7 +15,9 @@ const CACHE_ASSETS = [
     './js/InputHandler.js',
     './js/Game2048.js',
     './static/wechat-qr.png',
-    './static/dache.png'
+    './static/dache.png',
+    './static/wechat-qr-mobile.png',
+    './static/dache-mobile.png'
 ];
 
 // 安装事件 - 预缓存资源

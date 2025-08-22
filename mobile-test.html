@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📱 移动端图片加载测试</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+            padding: 15px; 
+            background: #f8f9fa;
+            margin: 0;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .test-card { 
+            background: white; 
+            padding: 20px; 
+            margin: 15px 0; 
+            border-radius: 12px; 
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        .result { 
+            padding: 12px; 
+            margin: 10px 0; 
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        .success { background: #d4edda; color: #155724; border-left: 4px solid #28a745; }
+        .info { background: #d1ecf1; color: #0c5460; border-left: 4px solid #17a2b8; }
+        .warning { background: #fff3cd; color: #856404; border-left: 4px solid #ffc107; }
+        .error { background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; }
+        
+        .device-info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin: 15px 0;
+        }
+        
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin: 15px 0;
+        }
+        .metric {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+        }
+        .metric-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #495057;
+        }
+        .metric-label {
+            font-size: 11px;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+        
+        img { 
+            max-width: 100%; 
+            border: 1px solid #ddd; 
+            margin: 10px 0; 
+            border-radius: 8px; 
+        }
+        
+        .spinner { 
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            width: 100%;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+        
+        button:active {
+            background: #0056b3;
+            transform: scale(0.98);
+        }
+        
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .comparison-item {
+            text-align: center;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+        }
+        
+        .size-old { background: #fff5f5; border-color: #fed7d7; }
+        .size-new { background: #f0fff4; border-color: #9ae6b4; }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 移动端优化测试</h1>
+        
+        <div class="device-info">
+            <strong>设备信息：</strong><br>
+            屏幕: <span id="screen-size"></span><br>
+            User Agent: <span id="user-agent"></span><br>
+            连接类型: <span id="connection-type"></span>
+        </div>
+        
+        <div class="test-card">
+            <h2>🆚 优化前后对比</h2>
+            <div class="comparison">
+                <div class="comparison-item size-old">
+                    <div class="metric-value">656KB</div>
+                    <div class="metric-label">桌面版图片</div>
+                </div>
+                <div class="comparison-item size-new">
+                    <div class="metric-value">144KB</div>
+                    <div class="metric-label">移动版图片</div>
+                </div>
+            </div>
+            <div class="result info">
+                📉 文件大小减少 <strong>78%</strong>，预期加载速度提升 <strong>4-5倍</strong>
+            </div>
+        </div>
+
+        <div class="test-card">
+            <h2>⚡ 实时加载测试</h2>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <div id="test-status">准备测试...</div>
+            
+            <button onclick="runMobileTest()">🚀 开始移动端测试</button>
+            
+            <div class="metrics" id="test-metrics" style="display: none;">
+                <div class="metric">
+                    <div class="metric-value" id="dache-time">--</div>
+                    <div class="metric-label">搭车图片加载</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="qr-time">--</div>
+                    <div class="metric-label">二维码加载</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="total-time">--</div>
+                    <div class="metric-label">总加载时间</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="cache-status">--</div>
+                    <div class="metric-label">缓存状态</div>
+                </div>
+            </div>
+            
+            <div id="test-results"></div>
+            <div id="test-images"></div>
+        </div>
+
+        <div class="test-card">
+            <h2>🎯 优化技术</h2>
+            <div class="result info">
+                <strong>📱 移动端专用图片：</strong> 针对小屏幕优化的小尺寸版本
+            </div>
+            <div class="result info">
+                <strong>🤖 智能设备检测：</strong> 自动选择最适合的图片版本
+            </div>
+            <div class="result info">
+                <strong>⚡ 积极预加载：</strong> 游戏启动+首次操作双重预加载
+            </div>
+            <div class="result info">
+                <strong>💾 Service Worker：</strong> 离线缓存，第二次访问秒开
+            </div>
+        </div>
+    </div>
+
+    <script src="js/ImagePreloader.js"></script>
+    <script>
+        // 显示设备信息
+        document.getElementById('screen-size').textContent = `${window.innerWidth}×${window.innerHeight}`;
+        document.getElementById('user-agent').textContent = navigator.userAgent;
+        
+        // 检测网络连接
+        if ('connection' in navigator) {
+            const conn = navigator.connection;
+            document.getElementById('connection-type').textContent = 
+                `${conn.effectiveType || 'unknown'} (${conn.downlink || '?'}Mbps)`;
+        } else {
+            document.getElementById('connection-type').textContent = '未知';
+        }
+
+        let testStartTime;
+        let completedTests = 0;
+        const totalTests = 2;
+
+        function updateProgress(percentage) {
+            document.getElementById('progress-fill').style.width = percentage + '%';
+        }
+
+        function runMobileTest() {
+            console.log('🚀 开始移动端图片加载测试');
+            
+            // 重置状态
+            completedTests = 0;
+            testStartTime = performance.now();
+            updateProgress(0);
+            
+            document.getElementById('test-status').innerHTML = 
+                '<div class="spinner"></div>正在测试移动端图片加载...';
+            document.getElementById('test-results').innerHTML = '';
+            document.getElementById('test-images').innerHTML = '';
+            document.getElementById('test-metrics').style.display = 'none';
+            
+            // 检测设备类型
+            const isMobile = ImagePreloader.isMobileDevice();
+            const deviceType = isMobile ? '移动设备' : '桌面设备';
+            
+            // 获取对应的图片URL
+            const dacheUrl = ImagePreloader.getResponsiveImageUrl('dache');
+            const qrUrl = ImagePreloader.getResponsiveImageUrl('wechat-qr');
+            
+            // 测试搭车图片
+            testImageLoad(dacheUrl, 'dache', '搭车图片');
+            // 测试二维码图片
+            testImageLoad(qrUrl, 'qr', '二维码图片');
+            
+            console.log(`📱 设备类型: ${deviceType}`);
+            console.log(`🖼️ 搭车图片: ${dacheUrl}`);
+            console.log(`🖼️ 二维码: ${qrUrl}`);
+        }
+
+        function testImageLoad(url, type, description) {
+            const startTime = performance.now();
+            const img = new Image();
+            
+            img.onload = function() {
+                const loadTime = performance.now() - startTime;
+                completedTests++;
+                
+                // 更新进度
+                updateProgress((completedTests / totalTests) * 100);
+                
+                // 记录结果
+                document.getElementById(`${type}-time`).textContent = `${loadTime.toFixed(0)}ms`;
+                
+                // 显示图片
+                const imgContainer = document.createElement('div');
+                imgContainer.innerHTML = `
+                    <div class="result success">
+                        ✅ ${description} 加载成功 - ${loadTime.toFixed(0)}ms
+                    </div>
+                    <img src="${url}" alt="${description}" style="max-height: 150px;">
+                `;
+                document.getElementById('test-images').appendChild(imgContainer);
+                
+                // 检查是否所有测试完成
+                if (completedTests >= totalTests) {
+                    completeTest();
+                }
+            };
+            
+            img.onerror = function() {
+                const loadTime = performance.now() - startTime;
+                completedTests++;
+                
+                updateProgress((completedTests / totalTests) * 100);
+                
+                document.getElementById(`${type}-time`).textContent = 'Failed';
+                
+                const errorContainer = document.createElement('div');
+                errorContainer.innerHTML = `
+                    <div class="result error">
+                        ❌ ${description} 加载失败 - ${loadTime.toFixed(0)}ms
+                    </div>
+                `;
+                document.getElementById('test-images').appendChild(errorContainer);
+                
+                if (completedTests >= totalTests) {
+                    completeTest();
+                }
+            };
+            
+            // 添加时间戳防止缓存影响测试
+            img.src = url + '?t=' + Date.now();
+        }
+
+        function completeTest() {
+            const totalTime = performance.now() - testStartTime;
+            
+            document.getElementById('total-time').textContent = `${totalTime.toFixed(0)}ms`;
+            document.getElementById('cache-status').textContent = 'Fresh';
+            document.getElementById('test-status').innerHTML = '✅ 测试完成！';
+            document.getElementById('test-metrics').style.display = 'grid';
+            
+            // 生成测试报告
+            const isMobile = ImagePreloader.isMobileDevice();
+            const report = `
+                <div class="result ${totalTime < 500 ? 'success' : totalTime < 1000 ? 'info' : 'warning'}">
+                    📊 <strong>测试报告：</strong><br>
+                    设备类型: ${isMobile ? '移动设备' : '桌面设备'}<br>
+                    总加载时间: ${totalTime.toFixed(0)}ms<br>
+                    性能评级: ${totalTime < 300 ? '🚀 极快' : totalTime < 600 ? '⚡ 很快' : totalTime < 1000 ? '✅ 良好' : '⚠️ 需优化'}
+                </div>
+            `;
+            document.getElementById('test-results').innerHTML = report;
+            
+            console.log(`🏁 移动端测试完成，总耗时: ${totalTime.toFixed(0)}ms`);
+        }
+
+        // 页面加载完成后显示当前使用的图片类型
+        window.addEventListener('load', () => {
+            const isMobile = ImagePreloader.isMobileDevice();
+            const status = isMobile ? 
+                '<div class="result info">📱 检测到移动设备，将使用优化后的小尺寸图片</div>' :
+                '<div class="result info">🖥️ 检测到桌面设备，将使用标准尺寸图片</div>';
+            
+            document.getElementById('test-status').innerHTML = status;
+        });
+    </script>
+</body>
+</html>
