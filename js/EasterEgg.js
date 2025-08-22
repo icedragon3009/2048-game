@@ -34,7 +34,7 @@ class EasterEgg {
         
         document.body.appendChild(this.qrOverlay);
         
-        // 启动2秒保护机制
+        // 启动2秒保护机制（静默保护，用户不可见）
         this.startProtection();
         
         // 二维码图片点击事件
@@ -274,26 +274,15 @@ class EasterEgg {
         this.isProtected = true;
         console.log('🛡️ 彩蛋保护机制启动，2秒内不会被误点关闭');
         
-        // 添加保护状态的视觉提示
-        if (this.qrOverlay) {
-            this.qrOverlay.classList.add('easter-egg-protected');
-        }
-        
         // 清除之前的保护倒计时（如果存在）
         if (this.protectionTimeout) {
             clearTimeout(this.protectionTimeout);
         }
         
-        // 2秒后解除保护
+        // 2秒后解除保护（静默解除，无视觉提示）
         this.protectionTimeout = setTimeout(() => {
             this.isProtected = false;
             console.log('✅ 彩蛋保护机制解除，现在可以点击外部区域关闭');
-            
-            // 移除保护状态的视觉提示
-            if (this.qrOverlay) {
-                this.qrOverlay.classList.remove('easter-egg-protected');
-            }
-            
             this.protectionTimeout = null;
         }, 2000);
     }
@@ -346,11 +335,6 @@ class EasterEgg {
         if (this.protectionTimeout) {
             clearTimeout(this.protectionTimeout);
             this.protectionTimeout = null;
-        }
-        
-        // 移除保护状态的视觉提示
-        if (this.qrOverlay) {
-            this.qrOverlay.classList.remove('easter-egg-protected');
         }
     }
 }
